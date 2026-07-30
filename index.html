@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registru Brevete</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#0A1929;
+    --navy-panel:#0F2338;
+    --navy-panel-2:#132B44;
+    --steel:#26415A;
+    --steel-light:#3E617E;
+    --parchment:#E8E2D0;
+    --parchment-dim:#9CA8B3;
+    --brass:#B8935B;
+    --brass-bright:#D9B47F;
+    --amber:#D98E2B;
+    --red:#C1443C;
+    --green:#4C8C6B;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--navy-deep);
+    color:var(--parchment);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  .display{font-family:'Fraunces', serif;}
+
+  header{
+    background:linear-gradient(180deg, var(--navy-panel) 0%, var(--navy-panel-2) 100%);
+    border-bottom:2px solid var(--brass);
+    padding:22px 28px 18px;
+  }
+  .header-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+    justify-content:space-between;
+  }
+  .brand{display:flex; align-items:center; gap:14px;}
+  .emblem{width:44px; height:44px; flex-shrink:0;}
+  .brand h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:26px;
+    color:var(--brass-bright);
+    margin:0;
+    letter-spacing:0.3px;
+  }
+  .brand p{
+    margin:2px 0 0;
+    font-size:12.5px;
+    color:var(--parchment-dim);
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+  }
+  .header-right{display:flex; align-items:center; gap:18px;}
+  .gauges{display:flex; gap:0;}
+  .gauge{
+    padding:4px 20px;
+    border-left:1px solid var(--steel);
+    text-align:center;
+  }
+  .gauge:first-child{border-left:none;}
+  .gauge .num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:22px;
+    font-weight:600;
+    line-height:1;
+  }
+  .gauge .lbl{
+    font-size:10px;
+    color:var(--parchment-dim);
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    margin-top:4px;
+  }
+  .gauge.valid .num{color:var(--green);}
+  .gauge.warning .num{color:var(--amber);}
+  .gauge.expired .num{color:var(--red);}
+  .gauge.total .num{color:var(--parchment);}
+
+  .settings-btn{
+    background:transparent;
+    border:1px solid var(--steel);
+    color:var(--parchment-dim);
+    width:36px; height:36px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .settings-btn:hover{border-color:var(--brass); color:var(--brass-bright);}
+  .settings-btn svg{width:17px; height:17px;}
+
+  main{max-width:980px; margin:0 auto; padding:24px 20px 60px;}
+
+  .api-banner{
+    display:none;
+    background:rgba(217,142,43,0.1);
+    border:1px solid rgba(217,142,43,0.4);
+    color:var(--amber);
+    padding:10px 14px;
+    border-radius:var(--radius);
+    font-size:12.5px;
+    margin-bottom:18px;
+  }
+  .api-banner a, .api-banner button.link{
+    color:var(--brass-bright);
+    text-decoration:underline;
+    background:none; border:none; cursor:pointer; font-size:12.5px; padding:0; font-family:inherit;
+  }
+
+  .upload-zone{
+    border:1.5px dashed var(--brass);
+    border-radius:var(--radius);
+    padding:28px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+    background:rgba(184,147,91,0.03);
+    margin-bottom:28px;
+  }
+  .upload-zone:hover, .upload-zone.dragover{
+    border-color:var(--brass-bright);
+    background:rgba(184,147,91,0.08);
+  }
+  .upload-zone:focus-visible{outline:2px solid var(--brass-bright); outline-offset:3px;}
+  .upload-zone svg{width:34px; height:34px; margin-bottom:8px;}
+  .upload-zone .main-txt{font-size:15px; color:var(--parchment);}
+  .upload-zone .sub-txt{font-size:12.5px; color:var(--parchment-dim); margin-top:4px;}
+  #fileInput{display:none;}
+
+  .controls{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .filters{display:flex; gap:6px; flex-wrap:wrap;}
+  .filter-btn{
+    background:transparent;
+    border:1px solid var(--steel);
+    color:var(--parchment-dim);
+    padding:6px 13px;
+    border-radius:var(--radius);
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:12.5px;
+    cursor:pointer;
+    transition:all .12s;
+  }
+  .filter-btn:hover{border-color:var(--brass);}
+  .filter-btn.active{
+    background:var(--brass);
+    border-color:var(--brass);
+    color:var(--navy-deep);
+    font-weight:600;
+  }
+  .search-sort{display:flex; gap:8px; align-items:center;}
+  input[type=text], input[type=password], select{
+    background:var(--navy-panel);
+    border:1px solid var(--steel);
+    color:var(--parchment);
+    padding:7px 10px;
+    border-radius:var(--radius);
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:12.5px;
+  }
+  input[type=text]:focus, input[type=password]:focus, select:focus{outline:2px solid var(--brass-bright); outline-offset:1px;}
+  input::placeholder{color:var(--parchment-dim);}
+
+  .empty-state{
+    text-align:center;
+    padding:50px 20px;
+    color:var(--parchment-dim);
+  }
+  .empty-state svg{width:40px; height:40px; opacity:0.5; margin-bottom:10px;}
+  .empty-state p{font-size:14px; margin:4px 0;}
+
+  .cert-list{display:flex; flex-direction:column; gap:10px;}
+  .cert-row{
+    display:flex;
+    background:var(--navy-panel);
+    border:1px solid var(--steel);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .cert-row:hover{border-color:var(--steel-light);}
+  .gauge-bar{
+    width:8px;
+    flex-shrink:0;
+    background:var(--steel);
+    position:relative;
+  }
+  .gauge-bar .fill{
+    position:absolute;
+    bottom:0; left:0; right:0;
+    transition:height .3s;
+  }
+  .gauge-bar .fill.valid{background:var(--green);}
+  .gauge-bar .fill.warning{background:var(--amber);}
+  .gauge-bar .fill.expired{background:var(--red);}
+  .gauge-bar .fill.unknown{background:var(--steel-light);}
+
+  .cert-body{
+    flex:1;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:14px 18px;
+    flex-wrap:wrap;
+  }
+  .cert-main{flex:1; min-width:220px;}
+  .cert-main .name{font-family:'Fraunces', serif; font-size:16.5px; font-weight:600; color:var(--parchment);}
+  .cert-main .meta{font-size:12px; color:var(--parchment-dim); margin-top:3px;}
+  .cert-main .meta span + span{margin-left:10px;}
+
+  .cert-dates{display:flex; gap:18px; flex-shrink:0;}
+  .date-block .lbl{font-size:9.5px; text-transform:uppercase; color:var(--parchment-dim); letter-spacing:0.5px;}
+  .date-block .val{font-family:'IBM Plex Mono', monospace; font-size:13px; margin-top:2px;}
+
+  .status-block{text-align:right; min-width:110px;}
+  .status-badge{
+    display:inline-block;
+    font-size:10.5px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    padding:3px 9px;
+    border-radius:20px;
+  }
+  .status-badge.valid{background:rgba(76,140,107,0.18); color:var(--green);}
+  .status-badge.warning{background:rgba(217,142,43,0.18); color:var(--amber);}
+  .status-badge.expired{background:rgba(193,68,60,0.18); color:var(--red);}
+  .status-badge.unknown{background:rgba(158,168,179,0.15); color:var(--parchment-dim);}
+  .days-count{font-family:'IBM Plex Mono', monospace; font-size:18px; font-weight:600; margin-top:4px;}
+  .days-count.valid{color:var(--green);}
+  .days-count.warning{color:var(--amber);}
+  .days-count.expired{color:var(--red);}
+  .days-count.unknown{color:var(--parchment-dim);}
+
+  .cert-actions{display:flex; gap:6px; flex-shrink:0;}
+  .icon-btn{
+    background:transparent;
+    border:1px solid var(--steel);
+    color:var(--parchment-dim);
+    width:30px; height:30px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .12s;
+  }
+  .icon-btn:hover{border-color:var(--brass); color:var(--brass-bright);}
+  .icon-btn.danger:hover{border-color:var(--red); color:var(--red);}
+  .icon-btn svg{width:14px; height:14px;}
+
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(5,12,20,0.72);
+    display:none;
+    align-items:center; justify-content:center;
+    padding:20px;
+    z-index:50;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--navy-panel);
+    border:1px solid var(--brass);
+    border-radius:4px;
+    max-width:520px;
+    width:100%;
+    max-height:88vh;
+    overflow-y:auto;
+    padding:26px;
+  }
+  .modal h2{
+    font-family:'Fraunces', serif;
+    color:var(--brass-bright);
+    font-size:19px;
+    margin:0 0 4px;
+  }
+  .modal .modal-sub{font-size:12.5px; color:var(--parchment-dim); margin-bottom:18px;}
+  .form-row{margin-bottom:14px;}
+  .form-row label{
+    display:block;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--parchment-dim);
+    margin-bottom:5px;
+  }
+  .form-row input, .form-row textarea{
+    width:100%;
+    background:var(--navy-deep);
+    border:1px solid var(--steel);
+    color:var(--parchment);
+    padding:9px 10px;
+    border-radius:var(--radius);
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13.5px;
+  }
+  .form-row input[type=date]{font-family:'IBM Plex Mono', monospace;}
+  .form-row input:focus, .form-row textarea:focus{outline:2px solid var(--brass-bright); outline-offset:1px;}
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .modal-actions{display:flex; gap:10px; justify-content:flex-end; margin-top:20px;}
+  .btn{
+    padding:9px 18px;
+    border-radius:var(--radius);
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    border:1px solid transparent;
+    font-family:'IBM Plex Sans', sans-serif;
+  }
+  .btn-primary{background:var(--brass); color:var(--navy-deep);}
+  .btn-primary:hover{background:var(--brass-bright);}
+  .btn-ghost{background:transparent; border-color:var(--steel); color:var(--parchment-dim);}
+  .btn-ghost:hover{border-color:var(--steel-light); color:var(--parchment);}
+  .btn:disabled{opacity:0.5; cursor:not-allowed;}
+
+  .extract-note{
+    font-size:12px;
+    padding:9px 12px;
+    border-radius:var(--radius);
+    margin-bottom:16px;
+    border:1px solid;
+  }
+  .extract-note.ok{color:var(--green); border-color:rgba(76,140,107,0.4); background:rgba(76,140,107,0.08);}
+  .extract-note.err{color:var(--amber); border-color:rgba(217,142,43,0.4); background:rgba(217,142,43,0.08);}
+  .extract-note.info{color:var(--parchment-dim); border-color:var(--steel); background:rgba(158,168,179,0.06);}
+
+  .spinner{
+    width:16px; height:16px;
+    border:2px solid var(--steel);
+    border-top-color:var(--brass-bright);
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+    display:inline-block;
+    vertical-align:middle;
+    margin-right:8px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .file-preview{
+    display:flex; align-items:center; gap:10px;
+    background:var(--navy-deep);
+    border:1px solid var(--steel);
+    border-radius:var(--radius);
+    padding:10px 12px;
+    margin-bottom:16px;
+  }
+  .file-preview img{width:40px; height:40px; object-fit:cover; border-radius:2px;}
+  .file-preview .pdf-icon{width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:var(--steel); border-radius:2px; font-size:9px; font-weight:700; color:var(--parchment);}
+  .file-preview .fname{font-size:12px; color:var(--parchment-dim); word-break:break-all;}
+
+  .modal-wrap{position:relative;}
+  .close-x{
+    position:absolute; top:14px; right:14px;
+    background:transparent; border:none; color:var(--parchment-dim);
+    cursor:pointer; font-size:18px; line-height:1;
+  }
+  .close-x:hover{color:var(--parchment);}
+
+  .settings-note{font-size:12px; color:var(--parchment-dim); line-height:1.5; margin-bottom:16px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+
+  @media (max-width:640px){
+    .cert-body{flex-direction:column; align-items:flex-start;}
+    .cert-dates{width:100%; justify-content:space-between;}
+    .status-block{text-align:left; width:100%;}
+    .cert-actions{width:100%; justify-content:flex-end;}
+    .two-col{grid-template-columns:1fr;}
+    .header-row{flex-direction:column; align-items:flex-start;}
+    .gauges{flex-wrap:wrap;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div class="brand">
+      <svg class="emblem" viewBox="0 0 44 44" fill="none">
+        <circle cx="22" cy="22" r="19" stroke="#B8935B" stroke-width="1.5"/>
+        <circle cx="22" cy="22" r="2.2" fill="#D9B47F"/>
+        <g stroke="#B8935B" stroke-width="1.2">
+          <line x1="22" y1="4" x2="22" y2="9"/>
+          <line x1="22" y1="35" x2="22" y2="40"/>
+          <line x1="4" y1="22" x2="9" y2="22"/>
+          <line x1="35" y1="22" x2="40" y2="22"/>
+        </g>
+        <line x1="22" y1="22" x2="22" y2="10" stroke="#D9B47F" stroke-width="1.6"/>
+        <line x1="22" y1="22" x2="29" y2="26" stroke="#D9B47F" stroke-width="1.6"/>
+      </svg>
+      <div>
+        <h1>Registru Brevete</h1>
+        <p>Evidența certificatelor &amp; valabilitate</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="gauges">
+        <div class="gauge total"><div class="num mono" id="gTotal">0</div><div class="lbl">total</div></div>
+        <div class="gauge valid"><div class="num mono" id="gValid">0</div><div class="lbl">valabile</div></div>
+        <div class="gauge warning"><div class="num mono" id="gWarning">0</div><div class="lbl">expiră curând</div></div>
+        <div class="gauge expired"><div class="num mono" id="gExpired">0</div><div class="lbl">expirate</div></div>
+      </div>
+      <button class="settings-btn" id="settingsBtn" aria-label="Setări" title="Setări">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="api-banner" id="apiBanner">
+    Nu ai o cheie API salvată — certificatele noi trebuie completate manual.
+    <button class="link" id="apiBannerBtn">Adaugă cheia din Setări</button> pentru detectare automată.
+  </div>
+
+  <div class="upload-zone" id="uploadZone" tabindex="0" role="button" aria-label="Încarcă un certificat">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#B8935B" stroke-width="1.4">
+      <path d="M12 3v12m0-12l-4 4m4-4l4 4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/>
+    </svg>
+    <div class="main-txt">Trage un fișier aici sau apasă pentru a încărca</div>
+    <div class="sub-txt">Poze sau PDF — datele de expirare sunt detectate automat</div>
+  </div>
+  <input type="file" id="fileInput" accept="image/*,application/pdf" multiple>
+
+  <div class="controls">
+    <div class="filters" id="filters">
+      <button class="filter-btn active" data-filter="all">Toate</button>
+      <button class="filter-btn" data-filter="valid">Valabile</button>
+      <button class="filter-btn" data-filter="warning">Expiră curând</button>
+      <button class="filter-btn" data-filter="expired">Expirate</button>
+    </div>
+    <div class="search-sort">
+      <input type="text" id="searchInput" placeholder="Caută după nume sau autoritate…">
+      <select id="sortSelect">
+        <option value="expiry">Sortează: dată expirare</option>
+        <option value="name">Sortează: nume</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="listContainer"></div>
+</main>
+
+<!-- Review / Edit modal -->
+<div class="overlay" id="reviewOverlay">
+  <div class="modal modal-wrap">
+    <button class="close-x" id="closeReview" aria-label="Închide">✕</button>
+    <h2 id="reviewTitle">Certificat nou</h2>
+    <div class="modal-sub">Verifică datele detectate și corectează dacă e nevoie.</div>
+
+    <div id="extractNote"></div>
+    <div class="file-preview" id="filePreview" style="display:none;"></div>
+
+    <div class="form-row">
+      <label for="f_name">Denumire certificat / brevet</label>
+      <input type="text" id="f_name" placeholder="ex: Certificat de Competență STCW II/1">
+    </div>
+    <div class="form-row">
+      <label for="f_authority">Autoritate emitentă</label>
+      <input type="text" id="f_authority" placeholder="ex: Autoritatea Navală Română">
+    </div>
+    <div class="two-col">
+      <div class="form-row">
+        <label for="f_number">Număr certificat</label>
+        <input type="text" id="f_number">
+      </div>
+      <div class="form-row"></div>
+      <div class="form-row">
+        <label for="f_issue">Data eliberării</label>
+        <input type="date" id="f_issue">
+      </div>
+      <div class="form-row">
+        <label for="f_expiry">Data expirării</label>
+        <input type="date" id="f_expiry">
+      </div>
+    </div>
+    <div class="form-row">
+      <label for="f_notes">Observații</label>
+      <textarea id="f_notes" rows="2"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelReview">Renunță</button>
+      <button class="btn btn-primary" id="saveReview">Salvează în registru</button>
+    </div>
+  </div>
+</div>
+
+<!-- File viewer modal -->
+<div class="overlay" id="viewOverlay">
+  <div class="modal modal-wrap" style="max-width:640px; text-align:center;">
+    <button class="close-x" id="closeView" aria-label="Închide">✕</button>
+    <h2 id="viewTitle" style="margin-bottom:16px;">Document</h2>
+    <div id="viewContent"></div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal modal-wrap">
+    <button class="close-x" id="closeSettings" aria-label="Închide">✕</button>
+    <h2>Setări</h2>
+    <div class="modal-sub">Detectarea automată a datelor folosește API-ul Anthropic direct din acest browser.</div>
+    <p class="settings-note">
+      Cheia se salvează <strong>doar în acest browser</strong> (localStorage) și e folosită doar pentru a trimite documentul către Anthropic — nu ajunge nicăieri altundeva. Dacă lucrezi de pe mai multe dispozitive, va trebui să o adaugi pe fiecare separat.
+      Obții o cheie din <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
+    </p>
+    <div class="form-row">
+      <label for="f_apikey">Cheie API Anthropic</label>
+      <input type="password" id="f_apikey" placeholder="sk-ant-...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="clearApiKey">Șterge cheia</button>
+      <button class="btn btn-primary" id="saveApiKey">Salvează</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const WARNING_DAYS = 90;
+const LS_INDEX_KEY = 'certs-index';
+const LS_FILE_PREFIX = 'cert-file:';
+const LS_API_KEY = 'anthropic-api-key';
+
+let certs = [];
+let currentFilter = 'all';
+let searchTerm = '';
+let sortMode = 'expiry';
+let pendingReview = null;
+let editingId = null;
+
+const $ = (id) => document.getElementById(id);
+
+// ---------- Storage helpers (localStorage) ----------
+function loadIndex(){
+  try{
+    const raw = localStorage.getItem(LS_INDEX_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function saveIndex(){
+  try{
+    localStorage.setItem(LS_INDEX_KEY, JSON.stringify(certs));
+    return true;
+  }catch(e){
+    console.error('Eroare salvare index', e);
+    return false;
+  }
+}
+function saveFile(id, payload){
+  try{
+    localStorage.setItem(LS_FILE_PREFIX+id, JSON.stringify(payload));
+    return true;
+  }catch(e){
+    console.error('Eroare salvare fișier', e);
+    return false;
+  }
+}
+function getFile(id){
+  try{
+    const raw = localStorage.getItem(LS_FILE_PREFIX+id);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function deleteFile(id){
+  try{ localStorage.removeItem(LS_FILE_PREFIX+id); }catch(e){}
+}
+function getApiKey(){
+  return localStorage.getItem(LS_API_KEY) || '';
+}
+function setApiKey(key){
+  if(key) localStorage.setItem(LS_API_KEY, key);
+  else localStorage.removeItem(LS_API_KEY);
+}
+
+// ---------- Date utils ----------
+function todayMid(){ const d = new Date(); d.setHours(0,0,0,0); return d; }
+function daysUntil(dateStr){
+  if(!dateStr) return null;
+  const d = new Date(dateStr+'T00:00:00');
+  if(isNaN(d)) return null;
+  return Math.round((d - todayMid())/86400000);
+}
+function statusOf(days){
+  if(days === null) return 'unknown';
+  if(days < 0) return 'expired';
+  if(days <= WARNING_DAYS) return 'warning';
+  return 'valid';
+}
+function fmtDate(dateStr){
+  if(!dateStr) return '—';
+  const d = new Date(dateStr+'T00:00:00');
+  if(isNaN(d)) return '—';
+  return d.toLocaleDateString('ro-RO', {day:'2-digit', month:'2-digit', year:'numeric'});
+}
+function gaugeFillPct(days){
+  if(days === null) return 0;
+  const clamped = Math.max(0, Math.min(365, days));
+  return Math.round((1 - clamped/365) * 100);
+}
+
+// ---------- Rendering ----------
+function updateGauges(){
+  let valid=0, warning=0, expired=0;
+  certs.forEach(c=>{
+    const st = statusOf(daysUntil(c.expiryDate));
+    if(st==='valid') valid++;
+    else if(st==='warning') warning++;
+    else if(st==='expired') expired++;
+  });
+  $('gTotal').textContent = certs.length;
+  $('gValid').textContent = valid;
+  $('gWarning').textContent = warning;
+  $('gExpired').textContent = expired;
+}
+
+function updateApiBanner(){
+  $('apiBanner').style.display = getApiKey() ? 'none' : 'block';
+}
+
+function renderList(){
+  const container = $('listContainer');
+  let items = certs.filter(c=>{
+    const st = statusOf(daysUntil(c.expiryDate));
+    if(currentFilter !== 'all' && st !== currentFilter) return false;
+    if(searchTerm){
+      const hay = ((c.name||'')+' '+(c.authority||'')).toLowerCase();
+      if(!hay.includes(searchTerm.toLowerCase())) return false;
+    }
+    return true;
+  });
+
+  items.sort((a,b)=>{
+    if(sortMode==='name'){
+      return (a.name||'').localeCompare(b.name||'', 'ro');
+    }
+    const da = daysUntil(a.expiryDate);
+    const db = daysUntil(b.expiryDate);
+    if(da===null && db===null) return 0;
+    if(da===null) return 1;
+    if(db===null) return -1;
+    return da - db;
+  });
+
+  if(certs.length === 0){
+    container.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#9CA8B3" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <p><strong>Registrul e gol.</strong></p>
+        <p>Încarcă primul certificat pentru a începe evidența.</p>
+      </div>`;
+    return;
+  }
+  if(items.length === 0){
+    container.innerHTML = `<div class="empty-state"><p>Niciun certificat nu corespunde filtrului curent.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = `<div class="cert-list">${items.map(rowHtml).join('')}</div>`;
+
+  items.forEach(c=>{
+    const viewBtn = document.querySelector(`[data-view="${c.id}"]`);
+    if(viewBtn) viewBtn.addEventListener('click', ()=>openFileView(c));
+    const editBtn = document.querySelector(`[data-edit="${c.id}"]`);
+    if(editBtn) editBtn.addEventListener('click', ()=>openEdit(c));
+    const delBtn = document.querySelector(`[data-del="${c.id}"]`);
+    if(delBtn) delBtn.addEventListener('click', ()=>deleteCert(c.id));
+  });
+}
+
+function rowHtml(c){
+  const days = daysUntil(c.expiryDate);
+  const st = statusOf(days);
+  const fillPct = gaugeFillPct(days);
+  const daysLabel = days===null ? '—' : (days<0 ? `${Math.abs(days)} zile` : `${days} zile`);
+  const statusLabel = {valid:'Valabil', warning:'Expiră curând', expired:'Expirat', unknown:'Fără dată'}[st];
+  return `
+  <div class="cert-row">
+    <div class="gauge-bar"><div class="fill ${st}" style="height:${st==='unknown'?0:fillPct}%"></div></div>
+    <div class="cert-body">
+      <div class="cert-main">
+        <div class="name">${escapeHtml(c.name || 'Fără denumire')}</div>
+        <div class="meta">
+          <span>${escapeHtml(c.authority || 'Autoritate necunoscută')}</span>
+          ${c.certNumber ? `<span class="mono">Nr. ${escapeHtml(c.certNumber)}</span>` : ''}
+        </div>
+      </div>
+      <div class="cert-dates">
+        <div class="date-block"><div class="lbl">Eliberat</div><div class="val">${fmtDate(c.issueDate)}</div></div>
+        <div class="date-block"><div class="lbl">Expiră</div><div class="val">${fmtDate(c.expiryDate)}</div></div>
+      </div>
+      <div class="status-block">
+        <span class="status-badge ${st}">${statusLabel}</span>
+        <div class="days-count ${st}">${daysLabel}</div>
+      </div>
+      <div class="cert-actions">
+        ${c.hasFile ? `<button class="icon-btn" data-view="${c.id}" aria-label="Vezi document" title="Vezi document">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>` : ''}
+        <button class="icon-btn" data-edit="${c.id}" aria-label="Editează" title="Editează">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </button>
+        <button class="icon-btn danger" data-del="${c.id}" aria-label="Șterge" title="Șterge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+// ---------- Filters / search / sort ----------
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderList();
+  });
+});
+$('searchInput').addEventListener('input', (e)=>{ searchTerm = e.target.value; renderList(); });
+$('sortSelect').addEventListener('change', (e)=>{ sortMode = e.target.value; renderList(); });
+
+// ---------- Settings ----------
+$('settingsBtn').addEventListener('click', openSettings);
+$('apiBannerBtn').addEventListener('click', openSettings);
+function openSettings(){
+  $('f_apikey').value = getApiKey();
+  $('settingsOverlay').classList.add('open');
+}
+$('closeSettings').addEventListener('click', ()=>$('settingsOverlay').classList.remove('open'));
+$('saveApiKey').addEventListener('click', ()=>{
+  setApiKey($('f_apikey').value.trim());
+  updateApiBanner();
+  $('settingsOverlay').classList.remove('open');
+});
+$('clearApiKey').addEventListener('click', ()=>{
+  setApiKey('');
+  $('f_apikey').value = '';
+  updateApiBanner();
+});
+
+// ---------- Upload flow ----------
+const uploadZone = $('uploadZone');
+const fileInput = $('fileInput');
+uploadZone.addEventListener('click', ()=>fileInput.click());
+uploadZone.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); fileInput.click(); } });
+['dragover','dragenter'].forEach(ev=>uploadZone.addEventListener(ev, e=>{ e.preventDefault(); uploadZone.classList.add('dragover'); }));
+['dragleave','drop'].forEach(ev=>uploadZone.addEventListener(ev, e=>{ e.preventDefault(); uploadZone.classList.remove('dragover'); }));
+uploadZone.addEventListener('drop', e=>{
+  if(e.dataTransfer.files && e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', e=>{
+  if(e.target.files && e.target.files.length) handleFiles(e.target.files);
+  fileInput.value = '';
+});
+
+async function handleFiles(fileList){
+  for(const file of Array.from(fileList)){
+    await processOneFile(file);
+  }
+}
+
+function fileToDataUrl(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=>resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function compressImage(dataUrl){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      let w = img.width, h = img.height;
+      const maxW = 1400;
+      if(w > maxW){ h = Math.round(h * maxW / w); w = maxW; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.75));
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+async function processOneFile(file){
+  const isPdf = file.type === 'application/pdf';
+  let dataUrl = await fileToDataUrl(file);
+  let mediaType = file.type || (isPdf ? 'application/pdf' : 'image/jpeg');
+
+  if(!isPdf){
+    try{ dataUrl = await compressImage(dataUrl); mediaType = 'image/jpeg'; }
+    catch(e){ /* keep original if compression fails */ }
+  }
+
+  const base64 = dataUrl.split(',')[1];
+  const approxBytes = base64.length * 0.75;
+  const storable = approxBytes < 3.5 * 1024 * 1024;
+
+  pendingReview = {
+    fileData: dataUrl,
+    fileType: mediaType,
+    fileName: file.name,
+    storable
+  };
+  editingId = null;
+
+  openReviewModal({name:'', authority:'', certNumber:'', issueDate:'', expiryDate:'', notes:''});
+
+  const apiKey = getApiKey();
+  if(!apiKey){
+    setExtractNote('info', 'Nu ai o cheie API salvată — completează datele manual sau adaugă cheia din Setări.');
+    return;
+  }
+
+  showExtractLoading();
+  try{
+    const extracted = await extractCertData(base64, mediaType, isPdf, apiKey);
+    fillReviewForm(extracted);
+    setExtractNote('ok', 'Date detectate automat — verifică-le mai jos înainte de a salva.');
+  }catch(err){
+    console.error(err);
+    setExtractNote('err', 'Nu am putut citi automat datele din acest fișier. Completează manual câmpurile de mai jos.');
+  }
+}
+
+async function extractCertData(base64, mediaType, isPdf, apiKey){
+  const contentBlock = isPdf
+    ? {type:"document", source:{type:"base64", media_type:"application/pdf", data: base64}}
+    : {type:"image", source:{type:"base64", media_type: mediaType, data: base64}};
+
+  const prompt = `Ești un asistent care extrage date din certificate și brevete maritime (STCW, brevete de marinar, certificate medicale, cursuri de siguranță etc). Analizează documentul atașat și răspunde STRICT cu un obiect JSON, fără text explicativ și fără code fences, exact în acest format:
+{"nume":"denumirea completă a certificatului/brevetului","autoritate":"autoritatea emitentă","numarCertificat":"numărul certificatului sau null","dataEliberarii":"YYYY-MM-DD sau null","dataExpirarii":"YYYY-MM-DD sau null"}
+Dacă nu găsești o informație, folosește null pentru acel câmp.`;
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1000,
+      messages: [{ role: "user", content: [contentBlock, {type:"text", text: prompt}] }]
+    })
+  });
+  if(!response.ok){
+    const errText = await response.text().catch(()=> '');
+    throw new Error('API error ' + response.status + ' ' + errText);
+  }
+  const data = await response.json();
+  const textBlock = (data.content || []).find(b => b.type === 'text');
+  if(!textBlock) throw new Error('Fără răspuns text de la API');
+  let raw = textBlock.text.replace(/```json|```/g, '').trim();
+  const parsed = JSON.parse(raw);
+  return {
+    name: parsed.nume || '',
+    authority: parsed.autoritate || '',
+    certNumber: parsed.numarCertificat || '',
+    issueDate: parsed.dataEliberarii || '',
+    expiryDate: parsed.dataExpirarii || '',
+    notes: ''
+  };
+}
+
+// ---------- Review modal ----------
+function openReviewModal(data){
+  $('reviewTitle').textContent = editingId ? 'Editează certificat' : 'Certificat nou';
+  $('f_name').value = data.name || '';
+  $('f_authority').value = data.authority || '';
+  $('f_number').value = data.certNumber || '';
+  $('f_issue').value = data.issueDate || '';
+  $('f_expiry').value = data.expiryDate || '';
+  $('f_notes').value = data.notes || '';
+  $('extractNote').innerHTML = '';
+
+  const preview = $('filePreview');
+  if(pendingReview){
+    preview.style.display = 'flex';
+    const sizeNote = pendingReview.storable ? '' : ' — prea mare pentru a fi păstrat, doar datele vor fi salvate';
+    if(pendingReview.fileType.startsWith('image/')){
+      preview.innerHTML = `<img src="${pendingReview.fileData}" alt=""><div class="fname">${escapeHtml(pendingReview.fileName)}${sizeNote}</div>`;
+    } else {
+      preview.innerHTML = `<div class="pdf-icon">PDF</div><div class="fname">${escapeHtml(pendingReview.fileName)}${sizeNote}</div>`;
+    }
+  } else {
+    preview.style.display = 'none';
+    preview.innerHTML = '';
+  }
+
+  $('reviewOverlay').classList.add('open');
+  $('f_name').focus();
+}
+
+function showExtractLoading(){
+  setExtractNote('ok', '<span class="spinner"></span>Se citesc datele din document…');
+}
+function setExtractNote(type, html){
+  $('extractNote').innerHTML = `<div class="extract-note ${type}">${html}</div>`;
+}
+
+function fillReviewForm(d){
+  $('f_name').value = d.name || '';
+  $('f_authority').value = d.authority || '';
+  $('f_number').value = d.certNumber || '';
+  $('f_issue').value = d.issueDate || '';
+  $('f_expiry').value = d.expiryDate || '';
+}
+
+$('closeReview').addEventListener('click', closeReview);
+$('cancelReview').addEventListener('click', closeReview);
+function closeReview(){
+  $('reviewOverlay').classList.remove('open');
+  pendingReview = null;
+  editingId = null;
+}
+
+$('saveReview').addEventListener('click', ()=>{
+  const name = $('f_name').value.trim();
+  if(!name){ $('f_name').focus(); return; }
+
+  const record = {
+    id: editingId || (Date.now().toString(36) + Math.random().toString(36).slice(2,8)),
+    name,
+    authority: $('f_authority').value.trim(),
+    certNumber: $('f_number').value.trim(),
+    issueDate: $('f_issue').value,
+    expiryDate: $('f_expiry').value,
+    notes: $('f_notes').value.trim(),
+    hasFile: false
+  };
+
+  let fileWarning = '';
+  if(editingId){
+    const idx = certs.findIndex(c=>c.id===editingId);
+    if(idx>-1){
+      record.hasFile = certs[idx].hasFile;
+      certs[idx] = record;
+    }
+  } else {
+    if(pendingReview && pendingReview.storable){
+      const ok = saveFile(record.id, {dataUrl: pendingReview.fileData, fileType: pendingReview.fileType, fileName: pendingReview.fileName});
+      record.hasFile = ok;
+      if(!ok) fileWarning = ' Fișierul nu a putut fi salvat (spațiu insuficient în browser) — au fost păstrate doar datele.';
+    }
+    certs.push(record);
+  }
+
+  const indexOk = saveIndex();
+  updateGauges();
+  renderList();
+  closeReview();
+  if(!indexOk){
+    alert('Certificatul nu a putut fi salvat — spațiul de stocare al browserului e plin.');
+  } else if(fileWarning){
+    alert('Certificat salvat.' + fileWarning);
+  }
+});
+
+// ---------- Edit / delete ----------
+function openEdit(c){
+  editingId = c.id;
+  pendingReview = null;
+  openReviewModal(c);
+}
+
+function deleteCert(id){
+  const c = certs.find(x=>x.id===id);
+  if(!c) return;
+  if(!confirm(`Ștergi „${c.name}” din registru? Această acțiune nu poate fi anulată.`)) return;
+  certs = certs.filter(x=>x.id!==id);
+  saveIndex();
+  if(c.hasFile) deleteFile(id);
+  updateGauges();
+  renderList();
+}
+
+// ---------- File viewer ----------
+function openFileView(c){
+  $('viewTitle').textContent = c.name;
+  $('viewOverlay').classList.add('open');
+  const file = getFile(c.id);
+  if(!file){
+    $('viewContent').innerHTML = '<p>Documentul nu a putut fi găsit.</p>';
+    return;
+  }
+  if(file.fileType.startsWith('image/')){
+    $('viewContent').innerHTML = `<img src="${file.dataUrl}" style="max-width:100%; max-height:65vh; border-radius:4px;">
+      <div style="margin-top:14px;"><a href="${file.dataUrl}" download="${escapeHtml(file.fileName)}" class="btn btn-primary" style="text-decoration:none; display:inline-block;">Descarcă</a></div>`;
+  } else {
+    $('viewContent').innerHTML = `<p style="color:var(--parchment-dim); font-size:13px;">Fișier PDF: ${escapeHtml(file.fileName)}</p>
+      <div style="margin-top:10px;"><a href="${file.dataUrl}" download="${escapeHtml(file.fileName)}" class="btn btn-primary" style="text-decoration:none; display:inline-block;">Descarcă PDF</a></div>`;
+  }
+}
+$('closeView').addEventListener('click', ()=>$('viewOverlay').classList.remove('open'));
+
+[$('reviewOverlay'), $('viewOverlay'), $('settingsOverlay')].forEach(ov=>{
+  ov.addEventListener('click', (e)=>{ if(e.target===ov) ov.classList.remove('open'); });
+});
+
+// ---------- Init ----------
+(function init(){
+  certs = loadIndex();
+  updateGauges();
+  updateApiBanner();
+  renderList();
+})();
+</script>
+</body>
+</html>
